@@ -9,7 +9,7 @@ const server = http.createServer((req, res) => {
     // レスポンスのヘッダー（ステータスコードとデータの形式を書いたもの）を設定する
     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
     // レスポンスの本文（本文とは、実際に表示したい内容のこと）
-    res.end('nomadLaBOT is running.\n');
+    res.end('yurutcare-subot is running.\n');
 });
 // グローバルオブジェクトの'process'から、'PORT'という環境変数を探す
 const PORT = process.env.PORT || 3000; // ローカルとネット上でポート番号を替える
