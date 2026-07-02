@@ -44,10 +44,6 @@ client.once(Events.ClientReady, async () => {
     try {
         // 2. 取得したサーバーに直接スラッシュコマンドを登録する非同期処理
         await guild.commands.set([
-            // {
-            //     name: "setup",
-            //     description: "個人チャンネル作成ボタンを設置する"
-            // },
             {
                 name: "pannel-ticket",
                 description: "相談用パブリックチャンネル作成ボタンを設置する"
@@ -88,24 +84,6 @@ client.on("interactionCreate", async (interaction) => {
             });
         }
     }
-    // --- ---
-
-    // // --- '/setup'が実行された場合 ---
-    // if (interaction.commandName === "setup") {
-    //     // 青色のボタンを設計する
-    //     const row = new ActionRowBuilder().addComponents(
-    //         new ButtonBuilder()
-    //             .setCustomId("create_private_channel")
-    //             .setLabel("個人チャンネルを作成する")
-    //             .setStyle(ButtonStyle.Primary) // 青色のボタン
-    //     );
-    //     // 設計書をもとに、ボタン付きのメッセージを送る
-    //     await interaction.reply({
-    //         content: "下のボタンを押すと、あなたとスタッフだけの個人チャンネルが作成されます。",
-    //         components: [row]
-    //     });
-    // }
-    // // --- ---
 
     // --- '/pannel-ticket'が実行された場合 ---
     if (interaction.commandName === "pannel-ticket") {
@@ -132,60 +110,6 @@ client.on("interactionCreate", async (interaction) => {
     // ボタン以外に反応しないようにする
     if (!interaction.isButton()) return;
 
-    // // --- '個人チャンネル作成'ボタンが押された場合 ---
-    // if (interaction.customId === "create_private_channel") {
-    //     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
-    //     // サーバーを動的に取得する
-    //     const guild = interaction.guild;
-    //     // ユーザーを動的に取得する
-    //     const user = interaction.user;
-    //     // 'スタッフ'ロールを探す
-    //     const staffRole = guild.roles.cache.find(role => role.name === "スタッフ");
-    //     // 'スタッフ'がサーバーにいない場合は個人チャンネルを作成できない
-    //     if (!staffRole) {
-    //         return interaction.editReply({ content: "サーバー内に「スタッフ」ロールが見つかりません。事前にロールを作成してください。" });
-    //     }
-    //     // すでに個人チャンネルが作成されていないか探す###チャンネル名を変えるときに変更が必要###
-    //     const existingChannel = guild.channels.cache.find(c =>
-    //         c.type === ChannelType.GuildText && (
-    //             c.name === `${user.displayName}の部屋` ||
-    //             (c.permissionOverwrites && c.permissionOverwrites.cache.has(user.id) && c.name.endsWith("の部屋"))
-    //         )
-    //     );
-    //     // すでに個人チャンネルを作成している場合はそれを案内する
-    //     if (existingChannel) {
-    //         return interaction.editReply({ content: `すでにあなたの個人チャンネル ${existingChannel} は作成されています！` });
-    //     }
-    //     // エラーになっても処理をやめないようトライする
-    //     try {
-    //         // 1. 個人チャンネルを作成する
-    //         const privateChannel = await guild.channels.create({
-    //             // チャンネル名###チャンネル名を変えるときに変更が必要
-    //             name: `${user.displayName}の部屋`,
-    //             type: ChannelType.GuildText,
-    //             permissionOverwrites: [
-    //                 // 全員には非表示
-    //                 { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
-    //                 // ボタンを押したユーザーには表示
-    //                 { id: user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] },
-    //                 // スタッフには表示
-    //                 { id: staffRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] },
-    //                 // ボットにも表示
-    //                 { id: client.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] },
-    //             ],
-    //         });
-    //         // 2. ボットにメッセージを送信させる
-    //         await interaction.editReply({ content: `${privateChannel} を作成しました！` });
-    //         await privateChannel.send({ content: `${user} さん、こんにちは！\nこのチャンネルはあなたと管理者、スタッフだけが参加しています。` });
-    //     // エラーをキャッチする
-    //     } catch (error) {
-    //         console.error(error);
-    //         // ボットがメッセージを送る
-    //         await interaction.editReply({ content: "チャンネルの作成中にエラーが発生しました。" });
-    //     }
-    // }
-    // --- ---
-
     // --- '相談チャンネル作成'ボタンが押された場合 ---
     if (interaction.customId === "create_public_ticket") {
         // ボタンを押した人にしか見えないメッセージを送ることで処理落ちを防ぐ
@@ -194,12 +118,21 @@ client.on("interactionCreate", async (interaction) => {
         const guild = interaction.guild;
         // ボタンを押した人を動的に取得する
         const member = interaction.member; // サーバー内のユーザー情報（表示名・メンション取得用）
+        
+        // 管理者のロールを取得する
+        const adminRole = interaction.guild.roles.cache.find(
+            role => role.name === '管理者'
+        );
+        if (!adminRole) {
+            return interaction.editReply({ content: "サーバー内に「管理者」ロールが見つかりません。事前にロールを作成してください。" });
+        }
         // 'サポーター'ロールを取得する
         const supporterRole = guild.roles.cache.find(role => role.name === "サポーター");
         // サーバーに'サポーター'がいない場合は相談チャンネルを作成できない
         if (!supporterRole) {
             return interaction.editReply({ content: "サーバー内に「サポーター」ロールが見つかりません。事前にロールを作成してください。" });
         }
+        
         // エラーになっても処理をやめないようトライする
         try {
             // 1. 本日の日付（YYMMDD）を取得する
@@ -241,6 +174,40 @@ client.on("interactionCreate", async (interaction) => {
                 name: finalChannelName,
                 type: ChannelType.GuildText,
                 parent: parentCategoryId,
+                permissionOverwrites: [
+                    {
+                        // @everyone には見せない
+                        id: guild.roles.everyone.id,
+                        deny: [PermissionFlagsBits.ViewChannel],
+                    },
+                    {
+                        // Admin ロールには見せる
+                        id: adminRole.id,
+                        allow: [
+                        PermissionFlagsBits.ViewChannel,
+                        PermissionFlagsBits.SendMessages,
+                        PermissionFlagsBits.ReadMessageHistory,
+                        ],
+                    },
+                    {
+                        // サポーター ロールには見せる
+                        id: supporterRole.id,
+                        allow: [
+                        PermissionFlagsBits.ViewChannel,
+                        PermissionFlagsBits.SendMessages,
+                        PermissionFlagsBits.ReadMessageHistory,
+                        ],
+                    },
+                    {
+                        // ボタンを押した本人にも見せる
+                        id: member.id,
+                        allow: [
+                        PermissionFlagsBits.ViewChannel,
+                        PermissionFlagsBits.SendMessages,
+                        PermissionFlagsBits.ReadMessageHistory,
+                        ],
+                    },
+                ],
             });
             // 7. 赤い'相談を終わる'ボタンを設計する
             const closeRow = new ActionRowBuilder().addComponents(
